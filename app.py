@@ -20,19 +20,30 @@ st.markdown("<div class='stHeader'><h1>ðŸŒ¸ Dashboard Analisis Ralat idMe SKTB ð
 st.write("")
 
 # --- SAMBUNGAN GOOGLE SHEETS ---
-# Masukkan URL penuh Google Sheet Bubu di bawah
 url = "https://docs.google.com/spreadsheets/d/1y8BvpG0NN5WwwhSFWS2AOI4Qe8O4HYg5M-LPrMmzjk/edit#gid=1718218161"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 try:
-    # Kita baca tab 'DASHBOARD' yang ada formula =COUNTIF tu
-    df = conn.read(spreadsheet=url, worksheet="DASHBOARD", ttl="10s") 
-    df = df.dropna(subset=['Kelas', 'Jumlah Ralat']) # Buang row kosong
+    # Kita baca tab 'DASHBOARD'
+    # header=7 bermaksud kita mula baca dari baris ke-8 (A8 & B8)
+    df_raw = conn.read(spreadsheet=url, worksheet="DASHBOARD", ttl="10s", header=7)
+    
+    # Pilih Kolum A & B sahaja (Kelas & Jumlah Ralat)
+    df = df_raw.iloc[:, [0, 1]].copy()
+    df.columns = ['Kelas', 'Jumlah Ralat']
+    
+    # 1. Bersihkan data: Buang row yang tak ada nama kelas
+    # 2. Buang row '457' (jumlah besar kat bawah tu) supaya carta tak pelik
+    df = df.dropna(subset=['Kelas'])
+    df = df[df['Kelas'] != '457'] # Elakkan ambil total bawah sekali sebagai kelas
+    
+    # Tukar Jumlah Ralat kepada nombor
+    df['Jumlah Ralat'] = pd.to_numeric(df['Jumlah Ralat'], errors='coerce').fillna(0)
+    
 except Exception as e:
-    st.error("Alamak! Tak dapat baca data. Check nama tab 'DASHBOARD' ya.")
+    st.error(f"Alamak! Ada masalah teknikal: {e}")
     st.stop()
-
 # --- RINGKASAN ATAS ---
 total_ralat = df['Jumlah Ralat'].sum()
 col1, col2, col3 = st.columns(3)
