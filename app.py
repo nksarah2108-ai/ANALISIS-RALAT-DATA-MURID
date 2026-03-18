@@ -5,7 +5,7 @@ import plotly.express as px
 # Konfigurasi Halaman
 st.set_page_config(page_title="idMe Analysis SKTB", layout="wide")
 
-# --- TEMA CERAH & PINK ---
+# --- TEMA CERAH & PINK (PORTAL VIBE) ---
 st.markdown("""
     <style>
     .stApp { background-color: #fdf2f5; }
@@ -27,7 +27,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# URL Master CSV
+# URL Master CSV (Publish to Web)
 url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC4K9zTk5to3U37As72duwLP7GRqYMkauaAhjr6ANe8s6bl7Qz85ojUXeSDOYw3-iQkMvKV-gq4ZXf/pub?output=csv"
 
 # Link Edit Tab
@@ -44,28 +44,33 @@ link_setiap_kelas = {
     "PPKI AL-KHAWARIZMI": f"{base_url}#gid=515727477", "KESELURUHAN": f"{base_url}#gid=272260181"
 }
 
-@st.cache_data(ttl=2)
+@st.cache_data(ttl=5)
 def load_data():
     df = pd.read_csv(url)
-    # Tukar semua tajuk kolum jadi HURUF BESAR & buang space kosong
+    # 💡 CLEANING: Paksa semua tajuk jadi huruf besar & buang space kosong
     df.columns = [str(c).strip().upper() for c in df.columns]
     
-    # Kategori ralat (Semua dah jadi huruf besar)
+    # Kategori ralat (Semua dah jadi huruf besar untuk match)
     cols_ralat = ['ALAMAT', 'POSKOD', 'TIADA P1', 'TIADA P2', 'P1=P2', 'HUB P1', 'HUB P2', 'TANGGUNGAN', 'TIADA HP P1', 'PENDAPATAN', 'AKAUN OKU']
     existing_ralat = [c for c in cols_ralat if c in df.columns]
     
-    # Kira TOTAL ralat secara automatik (Sebab ralat tu dalam bentuk tick)
+    # Kira TOTAL ralat secara automatik berdasarkan Tick (sel yang ada isi)
     df['TOTAL_RALAT_AUTO'] = df[existing_ralat].notna().sum(axis=1)
     return df, existing_ralat
 
 try:
     df_master, ralat_list = load_data()
     
-    # Carian Menu (Guna kolum KELAS yang dah diproses)
+    # Guna 'KELAS' (huruf besar) untuk menu carian
     with st.sidebar:
         st.markdown("### 🌸 Menu Carian")
-        senarai_kelas = sorted(df_master['KELAS'].dropna().unique().tolist())
-        pilihan_kelas = st.selectbox("Pilih Kelas:", ["KESELURUHAN Sekolah"] + senarai_kelas)
+        if 'KELAS' in df_master.columns:
+            senarai_kelas = sorted(df_master['KELAS'].dropna().unique().tolist())
+            pilihan_kelas = st.selectbox("Pilih Kelas:", ["KESELURUHAN Sekolah"] + senarai_kelas)
+        else:
+            st.error("Alamak! Kolum 'KELAS' masih tak dijumpai. Check tajuk kolum pertama kat Google Sheet ya.")
+            st.stop()
+            
         if st.button('🔄 Refresh'):
             st.cache_data.clear()
             st.rerun()
@@ -73,7 +78,7 @@ try:
     # Dashboard Utama
     st.markdown(f"<h1>🎀 Portal Analisis Ralat SKTB 🎀</h1>", unsafe_allow_html=True)
     
-    # Butang Edit
+    # Link Edit Pintar
     key_link = pilihan_kelas if pilihan_kelas != "KESELURUHAN Sekolah" else "KESELURUHAN"
     link_edit = link_setiap_kelas.get(key_link, link_setiap_kelas["KESELURUHAN"])
     st.markdown(f'<center><a href="{link_edit}" target="_blank" class="edit-button">📝 Klik Untuk Kemaskini Data {pilihan_kelas}</a></center>', unsafe_allow_html=True)
@@ -106,10 +111,12 @@ try:
     fig.update_layout(plot_bgcolor='white', paper_bgcolor='rgba(0,0,0,0)', showlegend=False)
     st.plotly_chart(fig, use_container_width=True)
 
-    # Jadual
+    # Jadual Detail
     st.markdown("### 📋 Senarai Murid Perlu Tindakan")
-    cols_to_show = ['KELAS', 'NAMA MURID'] + ralat_list
+    # Nama Murid dalam sheet Cikgu sekarang ialah 'NAMA MURID' (Huruf Besar)
+    nama_col = 'NAMA MURID' if 'NAMA MURID' in df_display.columns else df_display.columns[1]
+    cols_to_show = ['KELAS', nama_col] + ralat_list
     st.dataframe(df_display[df_display['TOTAL_RALAT_AUTO'] > 0][cols_to_show].fillna(''), use_container_width=True, hide_index=True)
 
 except Exception as e:
-    st.error(f"Sila pastikan kolum 'KELAS' wujud di tab DATA: {e}")
+    st.error(f"Sila pastikan link CSV betul dan tab 'DATA' mengandungi kolum 'KELAS': {e}")
