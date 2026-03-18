@@ -6,7 +6,7 @@ from datetime import datetime
 # Konfigurasi Halaman
 st.set_page_config(page_title="idMe Analysis SKTB", layout="wide")
 
-# --- TEMA PINK & CERAH (STYLE CIKGU MOON) ---
+# --- TEMA PINK ---
 st.markdown("""
     <style>
     .stApp { background-color: #fdf2f5; }
@@ -23,40 +23,38 @@ st.markdown("""
         background-color: #ff4d88; color: white !important; padding: 12px 25px;
         text-align: center; border-radius: 12px; text-decoration: none;
         display: inline-block; font-weight: bold; margin-bottom: 25px; border: 2px solid #ffb6c1;
-        transition: 0.3s;
     }
-    .edit-button:hover { background-color: #ff1a66; transform: scale(1.05); }
     section[data-testid="stSidebar"] { background-color: #fff0f5; border-right: 2px solid #ffc1d6; }
     </style>
     """, unsafe_allow_html=True)
 
-# 🔗 URL SEDUT DATA (CSV)
+# 🔗 URL CSV UNTUK SEDUT DATA
 url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC4K9zTk5to3U37As72duwLP7GRqYMkauaAhjr6ANe8s6bl7Qz85ojUXeSDOYw3-iQkMvKV-gq4ZXf/pub?gid=272260181&single=true&output=csv"
 
-# 🔗 BASE URL (Ikut sebiji screenshot Cikgu)
-base_url = "https://docs.google.com/spreadsheets/d/1y8BvpG0NN5WwwhSFWS2AOI4Qe8O4HYg5M-LPrMmzjk/edit"
+# 🔗 LINK EDIT UTAMA (BUBU DAH COPY SEBIJI DARI GAMBAR CIKGU)
+# ID: 1y8BvpG0NN5WwwhSFWS2AOI4Qe8O4HYg5M-LPrMmzjk
+base_edit = "https://docs.google.com/spreadsheets/d/1y8BvpG0NN5WwwhSFWS2AOI4Qe8O4HYg5M-LPrMmzjk/edit"
 
-# Link dengan format gid berganda supaya Google tak pening
 link_setiap_kelas = {
-    "D1 IBNU SINA": f"{base_url}?gid=336938430#gid=336938430",
-    "D1 IBNU KHALDUN": f"{base_url}?gid=648519110#gid=648519110",
-    "D2 IBNU SINA": f"{base_url}?gid=851785168#gid=851785168",
-    "D2 IBNU KHALDUN": f"{base_url}?gid=2036307286#gid=2036307286",
-    "D3 IBNU SINA": f"{base_url}?gid=1435005895#gid=1435005895",
-    "D3 IBNU KHALDUN": f"{base_url}?gid=1308911247#gid=1308911247",
-    "D4 IBNU SINA": f"{base_url}?gid=1228814365#gid=1228814365",
-    "D4 IBNU KHALDUN": f"{base_url}?gid=749204493#gid=749204493",
-    "D5 IBNU SINA": f"{base_url}?gid=1273332386#gid=1273332386",
-    "D5 IBNU KHALDUN": f"{base_url}?gid=2136815731#gid=2136815731",
-    "D6 IBNU SINA": f"{base_url}?gid=255757977#gid=255757977",
-    "D6 IBNU KHALDUN": f"{base_url}?gid=283583087#gid=283583087",
-    "PRA AS-SYAFIE": f"{base_url}?gid=1872315757#gid=1872315757",
-    "PRA AL-GHAZALI": f"{base_url}?gid=1285559833#gid=1285559833",
-    "PRA AL-MALIKI": f"{base_url}?gid=1820910864#gid=1820910864",
-    "PPKI AL-BIRUNI": f"{base_url}?gid=646110232#gid=646110232",
-    "PPKI AL-FARABI": f"{base_url}?gid=378583943#gid=378583943",
-    "PPKI AL-KHAWARIZMI": f"{base_url}?gid=515727477#gid=515727477",
-    "KESELURUHAN Sekolah": f"{base_url}?gid=272260181#gid=272260181"
+    "D1 IBNU SINA": f"{base_edit}?gid=336938430#gid=336938430",
+    "D1 IBNU KHALDUN": f"{base_edit}?gid=648519110#gid=648519110",
+    "D2 IBNU SINA": f"{base_edit}?gid=851785168#gid=851785168",
+    "D2 IBNU KHALDUN": f"{base_edit}?gid=2036307286#gid=2036307286",
+    "D3 IBNU SINA": f"{base_edit}?gid=1435005895#gid=1435005895",
+    "D3 IBNU KHALDUN": f"{base_edit}?gid=1308911247#gid=1308911247",
+    "D4 IBNU SINA": f"{base_edit}?gid=1228814365#gid=1228814365",
+    "D4 IBNU KHALDUN": f"{base_edit}?gid=749204493#gid=749204493",
+    "D5 IBNU SINA": f"{base_edit}?gid=1273332386#gid=1273332386",
+    "D5 IBNU KHALDUN": f"{base_edit}?gid=2136815731#gid=2136815731",
+    "D6 IBNU SINA": f"{base_edit}?gid=255757977#gid=255757977",
+    "D6 IBNU KHALDUN": f"{base_edit}?gid=283583087#gid=283583087",
+    "PRA AS-SYAFIE": f"{base_edit}?gid=1872315757#gid=1872315757",
+    "PRA AL-GHAZALI": f"{base_edit}?gid=1285559833#gid=1285559833",
+    "PRA AL-MALIKI": f"{base_edit}?gid=1820910864#gid=1820910864",
+    "PPKI AL-BIRUNI": f"{base_edit}?gid=646110232#gid=646110232",
+    "PPKI AL-FARABI": f"{base_edit}?gid=378583943#gid=378583943",
+    "PPKI AL-KHAWARIZMI": f"{base_edit}?gid=515727477#gid=515727477",
+    "KESELURUHAN Sekolah": f"{base_edit}?gid=272260181#gid=272260181"
 }
 
 @st.cache_data(ttl=2)
@@ -78,20 +76,20 @@ try:
         st.markdown("### 🌸 Menu Carian")
         senarai_kelas = sorted(df_master['KELAS'].unique().tolist())
         pilihan = st.selectbox("Pilih Kelas:", ["KESELURUHAN Sekolah"] + senarai_kelas)
-        if st.button('🔄 Refresh Data'):
+        if st.button('🔄 Refresh'):
             st.cache_data.clear()
             st.rerun()
         st.write(f"Masa: {datetime.now().strftime('%H:%M:%S')}")
 
     st.markdown(f"<h1>🎀 Portal Analisis Ralat SKTB 🎀</h1>", unsafe_allow_html=True)
     
-    # Butang Link (Guna format gid berganda)
+    # BUTANG PINK DINAMIK
     link_edit = link_setiap_kelas.get(pilihan, link_setiap_kelas["KESELURUHAN Sekolah"])
     st.markdown(f'<center><a href="{link_edit}" target="_blank" class="edit-button">📝 Klik Untuk Kemaskini Data {pilihan}</a></center>', unsafe_allow_html=True)
 
     df_display = df_master if pilihan == "KESELURUHAN Sekolah" else df_master[df_master['KELAS'] == pilihan]
     
-    # Metrics
+    # Stats
     total_r = int(df_display['TOTAL_RALAT'].sum())
     murid_r = len(df_display[df_display['TOTAL_RALAT'] > 0])
     kelas_terbaik = "6 IBNU SINA"
@@ -126,4 +124,4 @@ try:
         st.success(f"🎉 Tahniah! Kelas {pilihan} sudah tiada ralat.")
 
 except Exception as e:
-    st.error(f"Ralat Sistem: {e}")
+    st.error(f"Sila Refresh: {e}")
