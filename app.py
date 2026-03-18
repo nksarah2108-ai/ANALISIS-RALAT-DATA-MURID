@@ -3,99 +3,99 @@ import pandas as pd
 import plotly.express as px
 
 # Konfigurasi Halaman
-st.set_page_config(page_title="idMe Analysis SKTB", layout="wide")
+st.set_page_config(page_title="idMe Master SKTB", layout="wide")
 
-# --- CSS UNTUK TEMA CERAH & KAD (PASTEL) ---
+# --- TEMA CERAH (CLEAN & PINK) ---
 st.markdown("""
     <style>
-    /* Latar belakang putih/pink cair */
     .stApp { background-color: #fdf2f5; }
-    
-    /* Gaya untuk Kad Statistik */
-    .card-container {
-        display: flex;
-        justify-content: space-around;
-        gap: 10px;
-        margin-bottom: 20px;
-    }
     .metric-card {
-        background-color: white;
-        padding: 15px;
-        border-radius: 15px;
-        border: 1px solid #ffc1d6;
-        text-align: center;
-        flex: 1;
+        background-color: white; padding: 15px; border-radius: 12px;
+        border: 1px solid #ffc1d6; text-align: center;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
     }
-    .metric-card h4 { color: #888; font-size: 14px; margin-bottom: 5px; }
-    .metric-card h2 { color: #ff4d88; margin: 0; font-size: 28px; }
-    
-    /* Tajuk Pink */
-    h1, h3 { color: #ff4d88; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    h1, h3 { color: #ff4d88; text-align: center; }
+    [data-testid="stMetricValue"] { color: #ff4d88; }
     </style>
     """, unsafe_allow_html=True)
 
-# Tajuk Utama
-st.markdown("<h1>🎀 Dashboard Analisis Ralat Murid (idMe) 🎀</h1>", unsafe_allow_html=True)
+# Tajuk
+st.markdown("<h1>🌸 Dashboard Ralat idMe (Master) 🌸</h1>", unsafe_allow_html=True)
 st.markdown("<h3>SK Telok Berembang</h3>", unsafe_allow_html=True)
-st.write("")
 
-# URL Data Bubu (Link Publish)
+# URL Master Tab (Guna link Publish to Web - CSV)
 url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC4K9zTk5to3U37As72duwLP7GRqYMkauaAhjr6ANe8s6bl7Qz85ojUXeSDOYw3-iQkMvKV-gq4ZXf/pub?output=csv"
 
 @st.cache_data(ttl=10)
-def get_data():
-    df_raw = pd.read_csv(url, skiprows=7)
-    df = df_raw.iloc[:, [0, 1]].copy()
-    df.columns = ['Kelas', 'Jumlah Ralat']
-    df = df.dropna(subset=['Kelas'])
-    df = df[df['Kelas'].astype(str).str.contains('IBNU|PRA|PPKI', case=False, na=False)]
-    df['Jumlah Ralat'] = pd.to_numeric(df['Jumlah Ralat'], errors='coerce').fillna(0)
+def load_master_data():
+    # Baca data (Adjust skiprows jika tajuk Master Tab Cikgu bukan di baris 1)
+    df = pd.read_csv(url)
+    
+    # Pastikan nama kolum bersih
+    df.columns = df.columns.str.strip()
+    
+    # Tukar Jumlah Ralat kepada nombor
+    if 'Jumlah Ralat' in df.columns:
+        df['Jumlah Ralat'] = pd.to_numeric(df['Jumlah Ralat'], errors='coerce').fillna(0)
+    
     return df
 
 try:
-    df = get_data()
-    total_ralat = int(df['Jumlah Ralat'].sum())
-    kelas_terbaik = df.loc[df['Jumlah Ralat'].idxmin(), 'Kelas']
-
-    # --- BAHAGIAN KAD (METRICS) ---
-    st.markdown(f"""
-    <div class="card-container">
-        <div class="metric-card"><h4>Kelas Terbaik</h4><h2>{kelas_terbaik}</h2></div>
-        <div class="metric-card"><h4>Jumlah Ralat</h4><h2>{total_ralat}</h2></div>
-        <div class="metric-card"><h4>Ralat Selesai</h4><h2 style="color:#4CAF50;">0</h2></div>
-        <div class="metric-card"><h4>Belum Selesai</h4><h2 style="color:#FF5252;">{total_ralat}</h2></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # --- GRAF PERBANDINGAN (CERAH & WARNA-WARNI) ---
-    st.markdown("<p style='text-align:center; color:#ff4d88; font-weight:bold;'>Perbandingan Ralat Mengikut Kelas</p>", unsafe_allow_html=True)
+    df_master = load_master_data()
     
-    # Warna-warna pastel untuk bar
-    pastel_colors = ['#ffb3ba', '#ffdfba', '#ffffba', '#baffc9', '#bae1ff', '#e1baff', '#ffb3e6']
-    
-    fig = px.bar(df, x='Kelas', y='Jumlah Ralat', 
-                 color='Kelas', 
-                 color_discrete_sequence=px.colors.qualitative.Pastel)
+    # --- BAHAGIAN DROPDOWN (PILIH KELAS) ---
+    st.write("### 🔍 Carian Mengikut Kelas")
+    senarai_kelas = sorted(df_master['Kelas'].unique().tolist())
+    pilihan_kelas = st.selectbox("Sila Pilih Kelas:", ["SEMUA KELAS"] + senarai_kelas)
 
-    # Buang background hitam dan grid gelap
-    fig.update_layout(
-        plot_bgcolor='white',
-        paper_bgcolor='rgba(0,0,0,0)',
-        showlegend=False,
-        margin=dict(t=10, b=10, l=10, r=10),
-        xaxis=dict(showgrid=True, gridcolor='#f0f0f0', tickangle=45),
-        yaxis=dict(showgrid=True, gridcolor='#f0f0f0')
-    )
-    
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    # Tapis data mengikut pilihan
+    if pilihan_kelas == "SEMUA KELAS":
+        df_filtered = df_master
+    else:
+        df_filtered = df_master[df_master['Kelas'] == pilihan_kelas]
 
-    # --- JADUAL DI BAWAH (OPSYENAL) ---
-    st.dataframe(df.sort_values('Jumlah Ralat', ascending=False), hide_index=True, use_container_width=True)
+    # --- KAD RINGKASAN (METRICS) ---
+    total_murid_ralat = len(df_filtered[df_filtered['Jumlah Ralat'] > 0])
+    total_kes_ralat = int(df_filtered['Jumlah Ralat'].sum())
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(f"<div class='metric-card'><h4>Murid Terlibat</h4><h2>{total_murid_ralat}</h2></div>", unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"<div class='metric-card'><h4>Jumlah Kes Ralat</h4><h2>{total_kes_ralat}</h2></div>", unsafe_allow_html=True)
+    with c3:
+        st.markdown(f"<div class='metric-card'><h4>Status</h4><h2 style='color:#ff4d88;'>TINDAKAN GURU</h2></div>", unsafe_allow_html=True)
+
+    st.divider()
+
+    # --- JADUAL DETAIL (NAMA MURID & JENIS RALAT) ---
+    st.write(f"### 📋 Senarai Murid & Jenis Ralat: {pilihan_kelas}")
+    
+    # Pilih kolum yang penting sahaja untuk dipaparkan
+    # (Pastikan nama kolum ni sama dengan dalam Google Sheet Cikgu)
+    cols_to_show = ['Nama Murid', 'Kelas', 'Jumlah Ralat']
+    
+    # Jika Cikgu ada kolum ralat spesifik, Bubu tambahkan sekali
+    all_cols = df_master.columns.tolist()
+    ralat_cols = [c for c in all_cols if c not in ['Nama Murid', 'Kelas', 'Jumlah Ralat', 'Bil']]
+    
+    # Paparkan jadual
+    st.dataframe(df_filtered[cols_to_show + ralat_cols], 
+                 use_container_width=True, 
+                 hide_index=True)
+
+    # --- GRAF PRESTASI ---
+    st.write("---")
+    st.write("### 📊 Analisis Ralat")
+    fig = px.bar(df_filtered.head(15), x='Nama Murid', y='Jumlah Ralat', 
+                 color='Jumlah Ralat', 
+                 color_continuous_scale='RdPu')
+    fig.update_layout(plot_bgcolor='white', paper_bgcolor='rgba(0,0,0,0)')
+    st.plotly_chart(fig, use_container_width=True)
 
 except Exception as e:
-    st.error(f"Data belum sedia atau ada ralat: {e}")
+    st.error(f"Sila pastikan link CSV Master Tab betul dan tajuk kolum tepat: {e}")
 
-if st.button('🔄 Kemaskini Data'):
+if st.button('🔄 Kemaskini Data Sekarang'):
     st.cache_data.clear()
     st.rerun()
