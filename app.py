@@ -46,76 +46,82 @@ link_setiap_kelas = {
 
 @st.cache_data(ttl=2)
 def load_data():
-    df = pd.read_csv(url)
-    
-    # 💡 TEKNIK FORCE: Kita namakan semula kolum ikut kedudukan (Index)
-    # Kolum 0 = KELAS, Kolum 1 = NAMA MURID, dan ralat seterusnya
-    new_names = ['KELAS', 'NAMA MURID', 'ALAMAT', 'POSKOD', 'TIADA P1', 'TIADA P2', 'P1 = P2', 'HUB P1', 'HUB P2', 'TANGGUNGAN', 'TIADA HP P1', 'PENDAPATAN', 'AKAUN OKU', 'SELESAI']
-    df.columns = new_names[:len(df.columns)]
-    
-    # Bersihkan space
-    df['KELAS'] = df['KELAS'].astype(str).str.strip()
-    
-    # Ambil baris yang ada nama kelas sahaja
-    df = df[df['KELAS'].str.contains('IBNU|PRA|PPKI', case=False, na=False)]
-    
-    ralat_cols = ['ALAMAT', 'POSKOD', 'TIADA P1', 'TIADA P2', 'P1 = P2', 'HUB P1', 'HUB P2', 'TANGGUNGAN', 'TIADA HP P1', 'PENDAPATAN', 'AKAUN OKU']
-    df['TOTAL_RALAT_AUTO'] = df[ralat_cols].notna().sum(axis=1)
-    
-    return df, ralat_cols
+    try:
+        df = pd.read_csv(url)
+        # Force namakan semula kolum (Index 0=KELAS, Index 1=NAMA MURID)
+        col_names = ['KELAS', 'NAMA MURID', 'ALAMAT', 'POSKOD', 'TIADA P1', 'TIADA P2', 'P1 = P2', 'HUB P1', 'HUB P2', 'TANGGUNGAN', 'TIADA HP P1', 'PENDAPATAN', 'AKAUN OKU', 'SELESAI']
+        df.columns = col_names[:len(df.columns)]
+        
+        # Bersihkan data
+        df = df.dropna(subset=['KELAS', 'NAMA MURID'], how='all')
+        df['KELAS'] = df['KELAS'].astype(str).str.strip()
+        
+        # Filter hanya baris yang ada kelas
+        df = df[df['KELAS'].str.contains('IBNU|PRA|PPKI', case=False, na=False)]
+        
+        ralat_cols = ['ALAMAT', 'POSKOD', 'TIADA P1', 'TIADA P2', 'P1 = P2', 'HUB P1', 'HUB P2', 'TANGGUNGAN', 'TIADA HP P1', 'PENDAPATAN', 'AKAUN OKU']
+        existing_ralat = [c for c in ralat_cols if c in df.columns]
+        df['TOTAL_RALAT_AUTO'] = df[existing_ralat].notna().sum(axis=1)
+        return df, existing_ralat
+    except:
+        return pd.DataFrame(), []
 
 try:
     df_master, ralat_list = load_data()
-    
-    with st.sidebar:
-        st.markdown("### 🌸 Menu Carian")
-        senarai_kelas = sorted(df_master['KELAS'].unique().tolist())
-        pilihan_kelas = st.selectbox("Pilih Kelas:", ["KESELURUHAN Sekolah"] + senarai_kelas)
-        if st.button('🔄 Refresh'):
-            st.cache_data.clear()
-            st.rerun()
 
-    st.markdown(f"<h1>🎀 Portal Analisis Ralat SKTB 🎀</h1>", unsafe_allow_html=True)
-    
-    key_link = pilihan_kelas if pilihan_kelas != "KESELURUHAN Sekolah" else "KESELURUHAN"
-    link_edit = link_setiap_kelas.get(key_link, link_setiap_kelas["KESELURUHAN"])
-    st.markdown(f'<center><a href="{link_edit}" target="_blank" class="edit-button">📝 Klik Untuk Kemaskini Data {pilihan_kelas}</a></center>', unsafe_allow_html=True)
+    if not df_master.empty:
+        # --- SIDEBAR ---
+        with st.sidebar:
+            st.markdown("### 🌸 Menu Carian")
+            senarai_kelas = sorted(df_master['KELAS'].unique().tolist())
+            pilihan_kelas = st.selectbox("Pilih Kelas:", ["KESELURUHAN Sekolah"] + senarai_kelas)
+            if st.button('🔄 Refresh'):
+                st.cache_data.clear()
+                st.rerun()
 
-    df_display = df_master if pilihan_kelas == "KESELURUHAN Sekolah" else df_master[df_master['KELAS'] == pilihan_kelas]
-    
-    # Metrics
-    total_ralat = int(df_display['TOTAL_RALAT_AUTO'].sum())
-    murid_terlibat = len(df_display[df_display['TOTAL_RALAT_AUTO'] > 0])
-    
-    # Ranking
-    df_rank = df_master.groupby('KELAS')['TOTAL_RALAT_AUTO'].sum().reset_index()
-    kelas_terbaik = df_rank.loc[df_rank['TOTAL_RALAT_AUTO'].idxmin(), 'KELAS']
+        # DASHBOARD UTAMA
+        st.markdown(f"<h1>🎀 Portal Analisis Ralat SKTB 🎀</h1>", unsafe_allow_html=True)
+        
+        link_key = pilihan_kelas if pilihan_kelas != "KESELURUHAN Sekolah" else "KESELURUHAN"
+        link_edit = link_setiap_kelas.get(link_key, link_setiap_kelas["KESELURUHAN"])
+        st.markdown(f'<center><a href="{link_edit}" target="_blank" class="edit-button">📝 Klik Untuk Kemaskini Data {pilihan_kelas}</a></center>', unsafe_allow_html=True)
 
-    st.markdown(f"""
-    <div class="card-container">
-        <div class="metric-card"><h4>Kelas Terbaik</h4><h2 style="color:#4CAF50;">{kelas_terbaik}</h2></div>
-        <div class="metric-card"><h4>Jumlah Ralat</h4><h2>{total_ralat}</h2></div>
-        <div class="metric-card"><h4>Ralat Selesai</h4><h2 style="color:#2196F3;">0</h2></div>
-        <div class="metric-card"><h4>Belum Selesai</h4><h2 style="color:#FF5252;">{total_ralat}</h2></div>
-    </div>
-    """, unsafe_allow_html=True)
+        df_display = df_master if pilihan_kelas == "KESELURUHAN Sekolah" else df_master[df_master['KELAS'] == pilihan_kelas]
+        
+        # Metrics
+        total_ralat = int(df_display['TOTAL_RALAT_AUTO'].sum())
+        murid_terlibat = len(df_display[df_display['TOTAL_RALAT_AUTO'] > 0])
+        
+        # Ranking (Safe check)
+        df_rank = df_master.groupby('KELAS')['TOTAL_RALAT_AUTO'].sum().reset_index()
+        kelas_terbaik = df_rank.loc[df_rank['TOTAL_RALAT_AUTO'].idxmin(), 'KELAS'] if not df_rank.empty else "N/A"
 
-    # Graf
-    if pilihan_kelas == "KESELURUHAN Sekolah":
-        st.markdown("<p style='text-align:center; font-weight:bold;'>Statistik Ralat Mengikut Semua Kelas</p>", unsafe_allow_html=True)
-        df_graph = df_display.groupby('KELAS')['TOTAL_RALAT_AUTO'].sum().reset_index()
-        fig = px.bar(df_graph, x='KELAS', y='TOTAL_RALAT_AUTO', color='KELAS', color_discrete_sequence=px.colors.qualitative.Pastel)
+        st.markdown(f"""
+        <div class="card-container">
+            <div class="metric-card"><h4>Kelas Terbaik</h4><h2 style="color:#4CAF50;">{kelas_terbaik}</h2></div>
+            <div class="metric-card"><h4>Jumlah Ralat</h4><h2>{total_ralat}</h2></div>
+            <div class="metric-card"><h4>Ralat Selesai</h4><h2 style="color:#2196F3;">0</h2></div>
+            <div class="metric-card"><h4>Belum Selesai</h4><h2 style="color:#FF5252;">{total_ralat}</h2></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # GRAF
+        if pilihan_kelas == "KESELURUHAN Sekolah":
+            df_graph = df_display.groupby('KELAS')['TOTAL_RALAT_AUTO'].sum().reset_index()
+            fig = px.bar(df_graph, x='KELAS', y='TOTAL_RALAT_AUTO', color='KELAS', color_discrete_sequence=px.colors.qualitative.Pastel)
+        else:
+            df_cat = df_display[ralat_list].notna().sum().reset_index()
+            df_cat.columns = ['KATEGORI', 'JUMLAH']
+            fig = px.bar(df_cat, x='KATEGORI', y='JUMLAH', color='KATEGORI', color_discrete_sequence=px.colors.qualitative.Pastel)
+
+        fig.update_layout(plot_bgcolor='white', paper_bgcolor='rgba(0,0,0,0)', showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # JADUAL
+        st.markdown("### 📋 Senarai Murid & Ralat Individu")
+        st.dataframe(df_display[df_display['TOTAL_RALAT_AUTO'] > 0][['KELAS', 'NAMA MURID'] + ralat_list].fillna(''), use_container_width=True, hide_index=True)
     else:
-        st.markdown("<p style='text-align:center; font-weight:bold;'>Pecahan Kategori Ralat</p>", unsafe_allow_html=True)
-        df_cat = df_display[ralat_list].notna().sum().reset_index()
-        df_cat.columns = ['KATEGORI', 'JUMLAH']
-        fig = px.bar(df_cat, x='KATEGORI', y='JUMLAH', color='KATEGORI', color_discrete_sequence=px.colors.qualitative.Pastel)
-
-    fig.update_layout(plot_bgcolor='white', paper_bgcolor='rgba(0,0,0,0)', showlegend=False)
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.markdown("### 📋 Senarai Murid & Ralat Individu")
-    st.dataframe(df_display[df_display['TOTAL_RALAT_AUTO'] > 0][['KELAS', 'NAMA MURID'] + ralat_list].fillna(''), use_container_width=True, hide_index=True)
+        st.warning("Menunggu data dari Google Sheets... Sila pastikan tab DATA tidak kosong.")
 
 except Exception as e:
-    st.error(f"Sila refresh semula: {e}")
+    st.info("Sila tunggu sebentar atau tekan butang Refresh.")
