@@ -47,56 +47,49 @@ link_setiap_kelas = {
 @st.cache_data(ttl=2)
 def load_data():
     df = pd.read_csv(url)
-    # Buang kolum kosong/duplicate
-    df = df.loc[:, ~df.columns.duplicated()]
-    # Paksa tajuk kolum jadi standard
-    df.columns = [str(c).strip().upper() for c in df.columns]
     
-    # Kunci nama kolum supaya tak tersalah ambil
-    c_kelas = 'KELAS'
-    c_nama = 'NAMA MURID'
+    # 💡 TEKNIK FORCE: Kita namakan semula kolum ikut kedudukan (Index)
+    # Kolum 0 = KELAS, Kolum 1 = NAMA MURID, dan ralat seterusnya
+    new_names = ['KELAS', 'NAMA MURID', 'ALAMAT', 'POSKOD', 'TIADA P1', 'TIADA P2', 'P1 = P2', 'HUB P1', 'HUB P2', 'TANGGUNGAN', 'TIADA HP P1', 'PENDAPATAN', 'AKAUN OKU', 'SELESAI']
+    df.columns = new_names[:len(df.columns)]
     
-    # Senarai ralat (ikut ejaan tepat Google Sheet Cikgu)
-    ralat_list = ['ALAMAT', 'POSKOD', 'TIADA P1', 'TIADA P2', 'P1 = P2', 'HUB P1', 'HUB P2', 'TANGGUNGAN', 'TIADA HP P1', 'PENDAPATAN', 'AKAUN OKU']
-    existing_ralat = [c for c in ralat_list if c in df.columns]
+    # Bersihkan space
+    df['KELAS'] = df['KELAS'].astype(str).str.strip()
     
-    # Filter: Hanya ambil baris yang ada nama Kelas (IBNU/PRA/PPKI)
-    df = df[df[c_kelas].astype(str).str.contains('IBNU|PRA|PPKI', case=False, na=False)]
+    # Ambil baris yang ada nama kelas sahaja
+    df = df[df['KELAS'].str.contains('IBNU|PRA|PPKI', case=False, na=False)]
     
-    # Kira TOTAL ralat secara live
-    df['TOTAL_RALAT_AUTO'] = df[existing_ralat].notna().sum(axis=1)
+    ralat_cols = ['ALAMAT', 'POSKOD', 'TIADA P1', 'TIADA P2', 'P1 = P2', 'HUB P1', 'HUB P2', 'TANGGUNGAN', 'TIADA HP P1', 'PENDAPATAN', 'AKAUN OKU']
+    df['TOTAL_RALAT_AUTO'] = df[ralat_cols].notna().sum(axis=1)
     
-    return df, existing_ralat, c_kelas, c_nama
+    return df, ralat_cols
 
 try:
-    df_master, ralat_list, col_kelas, col_nama = load_data()
+    df_master, ralat_list = load_data()
     
-    # --- SIDEBAR ---
     with st.sidebar:
         st.markdown("### 🌸 Menu Carian")
-        senarai_kelas = sorted(df_master[col_kelas].unique().tolist())
+        senarai_kelas = sorted(df_master['KELAS'].unique().tolist())
         pilihan_kelas = st.selectbox("Pilih Kelas:", ["KESELURUHAN Sekolah"] + senarai_kelas)
         if st.button('🔄 Refresh'):
             st.cache_data.clear()
             st.rerun()
 
-    # Dashboard Utama
     st.markdown(f"<h1>🎀 Portal Analisis Ralat SKTB 🎀</h1>", unsafe_allow_html=True)
     
     key_link = pilihan_kelas if pilihan_kelas != "KESELURUHAN Sekolah" else "KESELURUHAN"
     link_edit = link_setiap_kelas.get(key_link, link_setiap_kelas["KESELURUHAN"])
     st.markdown(f'<center><a href="{link_edit}" target="_blank" class="edit-button">📝 Klik Untuk Kemaskini Data {pilihan_kelas}</a></center>', unsafe_allow_html=True)
 
-    # Filter data
-    df_display = df_master if pilihan_kelas == "KESELURUHAN Sekolah" else df_master[df_master[col_kelas] == pilihan_kelas]
+    df_display = df_master if pilihan_kelas == "KESELURUHAN Sekolah" else df_master[df_master['KELAS'] == pilihan_kelas]
     
     # Metrics
     total_ralat = int(df_display['TOTAL_RALAT_AUTO'].sum())
     murid_terlibat = len(df_display[df_display['TOTAL_RALAT_AUTO'] > 0])
     
-    # Ranking Kelas Terbaik
-    df_rank = df_master.groupby(col_kelas)['TOTAL_RALAT_AUTO'].sum().reset_index()
-    kelas_terbaik = df_rank.loc[df_rank['TOTAL_RALAT_AUTO'].idxmin(), col_kelas]
+    # Ranking
+    df_rank = df_master.groupby('KELAS')['TOTAL_RALAT_AUTO'].sum().reset_index()
+    kelas_terbaik = df_rank.loc[df_rank['TOTAL_RALAT_AUTO'].idxmin(), 'KELAS']
 
     st.markdown(f"""
     <div class="card-container">
@@ -110,12 +103,10 @@ try:
     # Graf
     if pilihan_kelas == "KESELURUHAN Sekolah":
         st.markdown("<p style='text-align:center; font-weight:bold;'>Statistik Ralat Mengikut Semua Kelas</p>", unsafe_allow_html=True)
-        # Graf sekolah: Tunjukkan ralat ikut KELAS
-        df_graph = df_display.groupby(col_kelas)['TOTAL_RALAT_AUTO'].sum().reset_index()
-        fig = px.bar(df_graph, x=col_kelas, y='TOTAL_RALAT_AUTO', color=col_kelas, color_discrete_sequence=px.colors.qualitative.Pastel)
+        df_graph = df_display.groupby('KELAS')['TOTAL_RALAT_AUTO'].sum().reset_index()
+        fig = px.bar(df_graph, x='KELAS', y='TOTAL_RALAT_AUTO', color='KELAS', color_discrete_sequence=px.colors.qualitative.Pastel)
     else:
         st.markdown("<p style='text-align:center; font-weight:bold;'>Pecahan Kategori Ralat</p>", unsafe_allow_html=True)
-        # Graf kelas: Tunjukkan ralat ikut KATEGORI
         df_cat = df_display[ralat_list].notna().sum().reset_index()
         df_cat.columns = ['KATEGORI', 'JUMLAH']
         fig = px.bar(df_cat, x='KATEGORI', y='JUMLAH', color='KATEGORI', color_discrete_sequence=px.colors.qualitative.Pastel)
@@ -123,10 +114,8 @@ try:
     fig.update_layout(plot_bgcolor='white', paper_bgcolor='rgba(0,0,0,0)', showlegend=False)
     st.plotly_chart(fig, use_container_width=True)
 
-    # Jadual Senarai Murid
-    st.markdown("### 📋 Senarai Murid Perlu Tindakan")
-    cols_to_show = [col_kelas, col_nama] + ralat_list
-    st.dataframe(df_display[df_display['TOTAL_RALAT_AUTO'] > 0][cols_to_show].fillna(''), use_container_width=True, hide_index=True)
+    st.markdown("### 📋 Senarai Murid & Ralat Individu")
+    st.dataframe(df_display[df_display['TOTAL_RALAT_AUTO'] > 0][['KELAS', 'NAMA MURID'] + ralat_list].fillna(''), use_container_width=True, hide_index=True)
 
 except Exception as e:
-    st.error(f"Sila semak tajuk kolum di Google Sheet (Mesti KELAS dan NAMA MURID): {e}")
+    st.error(f"Sila refresh semula: {e}")
