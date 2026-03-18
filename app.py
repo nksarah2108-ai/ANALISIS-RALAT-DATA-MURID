@@ -13,7 +13,7 @@ st.markdown("""
     .metric-card {
         background-color: white; padding: 15px; border-radius: 15px;
         border: 1px solid #ffc1d6; text-align: center; flex: 1;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
     }
     .metric-card h4 { color: #888; font-size: 14px; margin-bottom: 5px; }
     .metric-card h2 { color: #ff4d88; margin: 0; font-size: 28px; }
@@ -30,7 +30,7 @@ st.markdown("""
 # URL Master CSV
 url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC4K9zTk5to3U37As72duwLP7GRqYMkauaAhjr6ANe8s6bl7Qz85ojUXeSDOYw3-iQkMvKV-gq4ZXf/pub?output=csv"
 
-# Link Edit Tab (GID Cikgu Moon)
+# Link Edit Tab (GID)
 base_url = "https://docs.google.com/spreadsheets/d/1y8BvpG0NN5WwwhSFWS2AOI4Qe8O4HYg5M-LPrMmzjk/edit"
 link_setiap_kelas = {
     "D1 IBNU SINA": f"{base_url}#gid=336938430", "D1 IBNU KHALDUN": f"{base_url}#gid=648519110",
@@ -44,31 +44,32 @@ link_setiap_kelas = {
     "PPKI AL-KHAWARIZMI": f"{base_url}#gid=515727477", "KESELURUHAN": f"{base_url}#gid=272260181"
 }
 
-@st.cache_data(ttl=2)
+@st.cache_data(ttl=5)
 def load_data():
-    # 💡 KEMASKINI: Skip 2 baris teratas terus untuk elakkan 'Table1' atau ruang kosong
-    df = pd.read_csv(url, header=None, skiprows=2)
+    # Baca data (Baris 1 automatik jadi tajuk)
+    df = pd.read_csv(url)
+    # Bersihkan nama kolum
+    df.columns = [str(c).strip().upper() for c in df.columns]
     
-    # Namakan semula kolum secara manual ikut apa Bubu nampak kat screenshot
-    new_cols = ['KELAS', 'NAMA_MURID', 'ALAMAT', 'POSKOD', 'TIADA_P1', 'TIADA_P2', 'P1_P2', 'HUB_P1', 'HUB_P2', 'TANGGUNGAN', 'TIADA_HP_P1', 'PENDAPATAN', 'AKAUN_OKU', 'SELESAI']
-    df.columns = new_cols[:len(df.columns)]
+    # Cari kolum Kelas & Nama Murid (Dynamic)
+    col_kelas = 'KELAS' if 'KELAS' in df.columns else df.columns[0]
+    col_nama = 'NAMA MURID' if 'NAMA MURID' in df.columns else df.columns[1]
     
-    # Buang baris yang tak ada nama murid
-    df = df.dropna(subset=['NAMA_MURID'])
+    # Senarai ralat (Match ejaan Sheet Cikgu)
+    ralat_list = ['ALAMAT', 'POSKOD', 'TIADA P1', 'TIADA P2', 'P1 = P2', 'HUB P1', 'HUB P2', 'TANGGUNGAN', 'TIADA HP P1', 'PENDAPATAN', 'AKAUN OKU']
+    existing_ralat = [c for c in ralat_list if c in df.columns]
     
-    # Kategori ralat (Check tick ✓)
-    ralat_list = ['ALAMAT', 'POSKOD', 'TIADA_P1', 'TIADA_P2', 'P1_P2', 'HUB_P1', 'HUB_P2', 'TANGGUNGAN', 'TIADA_HP_P1', 'PENDAPATAN', 'AKAUN_OKU']
-    df['TOTAL_RALAT_AUTO'] = df[ralat_list].notna().sum(axis=1)
-    
-    return df, ralat_list
+    # Kira Total Ralat
+    df['TOTAL_RALAT_AUTO'] = df[existing_ralat].notna().sum(axis=1)
+    return df, existing_ralat, col_kelas, col_nama
 
 try:
-    df_master, ralat_list = load_data()
+    df_master, ralat_list, col_kelas, col_nama = load_data()
     
-    # Menu Sidebar
+    # Sidebar
     with st.sidebar:
         st.markdown("### 🌸 Menu Carian")
-        senarai_kelas = sorted(df_master['KELAS'].dropna().unique().tolist())
+        senarai_kelas = sorted(df_master[col_kelas].dropna().unique().tolist())
         pilihan_kelas = st.selectbox("Pilih Kelas:", ["KESELURUHAN Sekolah"] + senarai_kelas)
         if st.button('🔄 Refresh'):
             st.cache_data.clear()
@@ -77,12 +78,11 @@ try:
     # Dashboard Utama
     st.markdown(f"<h1>🎀 Portal Analisis Ralat SKTB 🎀</h1>", unsafe_allow_html=True)
     
-    key_link = pilihan_kelas if pilihan_kelas != "KESELURUHAN Sekolah" else "KESELURUHAN"
-    link_edit = link_setiap_kelas.get(key_link, link_setiap_kelas["KESELURUHAN"])
+    link_edit = link_setiap_kelas.get(pilihan_kelas, link_setiap_kelas["KESELURUHAN"])
     st.markdown(f'<center><a href="{link_edit}" target="_blank" class="edit-button">📝 Klik Untuk Kemaskini Data {pilihan_kelas}</a></center>', unsafe_allow_html=True)
 
-    # Filter Data
-    df_display = df_master if pilihan_kelas == "KESELURUHAN Sekolah" else df_master[df_master['KELAS'] == pilihan_kelas]
+    # Filter
+    df_display = df_master if pilihan_kelas == "KESELURUHAN Sekolah" else df_master[df_master[col_kelas] == pilihan_kelas]
     
     # Metrics
     total_kes = int(df_display['TOTAL_RALAT_AUTO'].sum())
@@ -99,8 +99,8 @@ try:
 
     # Graf
     if pilihan_kelas == "KESELURUHAN Sekolah":
-        df_graph = df_display.groupby('KELAS')['TOTAL_RALAT_AUTO'].sum().reset_index()
-        fig = px.bar(df_graph, x='KELAS', y='TOTAL_RALAT_AUTO', color='KELAS', color_discrete_sequence=px.colors.qualitative.Pastel)
+        df_graph = df_display.groupby(col_kelas)['TOTAL_RALAT_AUTO'].sum().reset_index()
+        fig = px.bar(df_graph, x=col_kelas, y='TOTAL_RALAT_AUTO', color=col_kelas, color_discrete_sequence=px.colors.qualitative.Pastel)
     else:
         df_cat = df_display[ralat_list].notna().sum().reset_index()
         df_cat.columns = ['KATEGORI', 'JUMLAH']
@@ -111,8 +111,8 @@ try:
 
     # Jadual
     st.markdown("### 📋 Senarai Murid Perlu Tindakan")
-    df_table = df_display[df_display['TOTAL_RALAT_AUTO'] > 0][['KELAS', 'NAMA_MURID'] + ralat_list]
+    df_table = df_display[df_display['TOTAL_RALAT_AUTO'] > 0][[col_kelas, col_nama] + ralat_list]
     st.dataframe(df_table.fillna(''), use_container_width=True, hide_index=True)
 
 except Exception as e:
-    st.error(f"Sila pastikan data anda bermula dari baris ke-2 atau ke-3 di Google Sheet: {e}")
+    st.error(f"Sila pastikan data sudah dikemaskini: {e}")
