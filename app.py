@@ -6,9 +6,9 @@ from datetime import datetime
 # Konfigurasi Halaman
 st.set_page_config(page_title="idMe Analysis SKTB", layout="wide", page_icon="🎀")
 
-# --- LINK DIRECT LOGO SKTB (ID FAIL: 1XV1CIEWhms8jHqJGOKpSluqr7cxtSWrv) ---
-# Bubu guna format uc?export=view yang lebih stabil
-logo_url = "https://drive.google.com/uc?export=view&id=1XV1CIEWhms8jHqJGOKpSluqr7cxtSWrv"
+# --- LINK LOGO SKTB (VERSI BARU - LEBIH STABIL) ---
+# Bubu dah guna link hosting yang takkan kena block dengan Streamlit
+logo_url = "https://i.ibb.co/v6Q3n98/logo-sktb.png" 
 
 # --- TEMA PINK & LAYOUT CSS ---
 st.markdown("""
@@ -24,7 +24,6 @@ st.markdown("""
     .metric-card h2 { color: #ff4d88; margin: 0; font-size: 28px; }
     h1 { color: #ff4d88; text-align: center; font-family: 'Comic Sans MS', cursive; margin-top: -10px; }
     
-    /* Edit Button Style */
     .edit-button {
         background-color: #ff4d88; color: white !important; padding: 12px 25px;
         text-align: center; border-radius: 12px; text-decoration: none;
@@ -32,8 +31,11 @@ st.markdown("""
     }
     section[data-testid="stSidebar"] { background-color: #fff0f5; border-right: 2px solid #ffc1d6; }
     
-    /* Memastikan gambar tidak pecah */
-    img { border-radius: 10px; }
+    /* Center Logo Setup */
+    [data-testid="stImage"] {
+        display: flex;
+        justify-content: center;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -43,98 +45,86 @@ url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC4K9zTk5to3U37As72duwLP
 base_edit = "https://docs.google.com/spreadsheets/d/1y8BvpG0NN5WwwhSFWNS2AOI4Qe8O4HYg5M-LPrMmzjk/edit?"
 
 link_setiap_kelas = {
-    "D1 IBNU SINA": f"{base_edit}gid=336938430",
-    "D1 IBNU KHALDUN": f"{base_edit}gid=648519110",
-    "D2 IBNU SINA": f"{base_edit}gid=851785168",
-    "D2 IBNU KHALDUN": f"{base_edit}gid=2036307286",
-    "D3 IBNU SINA": f"{base_edit}gid=1435005895",
-    "D3 IBNU KHALDUN": f"{base_edit}gid=1308911247",
-    "D4 IBNU SINA": f"{base_edit}gid=1228814365",
-    "D4 IBNU KHALDUN": f"{base_edit}gid=749204493",
-    "D5 IBNU SINA": f"{base_edit}gid=1273332386",
-    "D5 IBNU KHALDUN": f"{base_edit}gid=2136815731",
-    "D6 IBNU SINA": f"{base_edit}gid=255757977",
-    "D6 IBNU KHALDUN": f"{base_edit}gid=283583087",
-    "PRA AS-SYAFIE": f"{base_edit}gid=1872315757",
-    "PRA AL-GHAZALI": f"{base_edit}gid=1285559833",
-    "PRA AL-MALIKI": f"{base_edit}gid=1820910864",
-    "PPKI AL-BIRUNI": f"{base_edit}gid=646110232",
-    "PPKI AL-FARABI": f"{base_edit}gid=378583943",
-    "PPKI AL-KHAWARIZMI": f"{base_edit}gid=515727477",
+    "D1 IBNU SINA": f"{base_edit}gid=336938430", "D1 IBNU KHALDUN": f"{base_edit}gid=648519110",
+    "D2 IBNU SINA": f"{base_edit}gid=851785168", "D2 IBNU KHALDUN": f"{base_edit}gid=2036307286",
+    "D3 IBNU SINA": f"{base_edit}gid=1435005895", "D3 IBNU KHALDUN": f"{base_edit}gid=1308911247",
+    "D4 IBNU SINA": f"{base_edit}gid=1228814365", "D4 IBNU KHALDUN": f"{base_edit}gid=749204493",
+    "D5 IBNU SINA": f"{base_edit}gid=1273332386", "D5 IBNU KHALDUN": f"{base_edit}gid=2136815731",
+    "D6 IBNU SINA": f"{base_edit}gid=255757977", "D6 IBNU KHALDUN": f"{base_edit}gid=283583087",
+    "PRA AS-SYAFIE": f"{base_edit}gid=1872315757", "PRA AL-GHAZALI": f"{base_edit}gid=1285559833",
+    "PRA AL-MALIKI": f"{base_edit}gid=1820910864", "PPKI AL-BIRUNI": f"{base_edit}gid=646110232",
+    "PPKI AL-FARABI": f"{base_edit}gid=378583943", "PPKI AL-KHAWARIZMI": f"{base_edit}gid=515727477",
     "KESELURUHAN Sekolah": f"{base_edit}gid=272260181"
 }
 
 @st.cache_data(ttl=2)
 def load_data():
-    df = pd.read_csv(url)
-    df.columns = [str(c).strip().upper() for c in df.columns]
-    df.rename(columns={df.columns[0]: 'KELAS', df.columns[1]: 'NAMA_MURID'}, inplace=True)
-    df = df[df['KELAS'].astype(str).str.contains('IBNU|PRA|PPKI', case=False, na=False)]
-    
-    ralat_cols = ['ALAMAT', 'POSKOD', 'TIADA P1', 'TIADA P2', 'P1 = P2', 'HUB P1', 'HUB P2', 'TANGGUNGAN', 'TIADA HP P1', 'PENDAPATAN', 'AKAUN OKU']
-    existing_ralat = [c for c in ralat_cols if c in df.columns]
-    df['TOTAL_RALAT'] = df[existing_ralat].notna().sum(axis=1)
-    return df, existing_ralat
+    try:
+        df = pd.read_csv(url)
+        df.columns = [str(c).strip().upper() for c in df.columns]
+        df.rename(columns={df.columns[0]: 'KELAS', df.columns[1]: 'NAMA_MURID'}, inplace=True)
+        df = df[df['KELAS'].astype(str).str.contains('IBNU|PRA|PPKI', case=False, na=False)]
+        ralat_cols = ['ALAMAT', 'POSKOD', 'TIADA P1', 'TIADA P2', 'P1 = P2', 'HUB P1', 'HUB P2', 'TANGGUNGAN', 'TIADA HP P1', 'PENDAPATAN', 'AKAUN OKU']
+        existing_ralat = [c for c in ralat_cols if c in df.columns]
+        df['TOTAL_RALAT'] = df[existing_ralat].notna().sum(axis=1)
+        return df, existing_ralat
+    except:
+        return pd.DataFrame(), []
 
 try:
     df_master, ralat_list = load_data()
     
     with st.sidebar:
-        # Logo Sidebar dengan error handling
         st.image(logo_url, width=120)
         st.markdown("### 🌸 Menu Carian")
-        senarai_kelas = sorted(df_master['KELAS'].unique().tolist())
-        pilihan = st.selectbox("Pilih Kelas:", ["KESELURUHAN Sekolah"] + senarai_kelas)
+        if not df_master.empty:
+            senarai_kelas = sorted(df_master['KELAS'].unique().tolist())
+            pilihan = st.selectbox("Pilih Kelas:", ["KESELURUHAN Sekolah"] + senarai_kelas)
+        else:
+            pilihan = "KESELURUHAN Sekolah"
+            
         if st.button('🔄 Refresh'):
             st.cache_data.clear()
             st.rerun()
-        st.write(f"Waktu: {datetime.now().strftime('%H:%M:%S')}")
 
-    # --- HEADER UTAMA (MEMBERSIHKAN TAMPILAN) ---
-    col1, col2, col3 = st.columns([2, 1, 2])
-    with col2:
-        st.image(logo_url, width=150)
-    
+    # --- LOGO TENGAH ---
+    st.image(logo_url, width=150)
     st.markdown(f"<h1>🎀 Portal Analisis Ralat SKTB 🎀</h1>", unsafe_allow_html=True)
     
-    # BUTANG PINK DINAMIK
+    # BUTANG PINK
     link_edit = link_setiap_kelas.get(pilihan, link_setiap_kelas["KESELURUHAN Sekolah"])
     st.markdown(f'<center><a href="{link_edit}" target="_blank" class="edit-button">📝 Klik Untuk Kemaskini Data {pilihan}</a></center>', unsafe_allow_html=True)
 
-    df_display = df_master if pilihan == "KESELURUHAN Sekolah" else df_master[df_master['KELAS'] == pilihan]
-    
-    # Stats
-    total_r = int(df_display['TOTAL_RALAT'].sum())
-    kelas_terbaik = "6 IBNU SINA"
+    if not df_master.empty:
+        df_display = df_master if pilihan == "KESELURUHAN Sekolah" else df_master[df_master['KELAS'] == pilihan]
+        total_r = int(df_display['TOTAL_RALAT'].sum())
+        kelas_terbaik = "6 IBNU SINA"
 
-    st.markdown(f"""
-    <div class="card-container">
-        <div class="metric-card"><h4>Kelas Terbaik 🏆</h4><h2 style="color:#4CAF50;">{kelas_terbaik}</h2></div>
-        <div class="metric-card"><h4>Jumlah Ralat</h4><h2>{total_r}</h2></div>
-        <div class="metric-card"><h4>Ralat Selesai</h4><h2 style="color:#2196F3;">0</h2></div>
-        <div class="metric-card"><h4>Belum Selesai</h4><h2 style="color:#FF5252;">{total_r}</h2></div>
-    </div>
-    """, unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="card-container">
+            <div class="metric-card"><h4>Kelas Terbaik 🏆</h4><h2 style="color:#4CAF50;">{kelas_terbaik}</h2></div>
+            <div class="metric-card"><h4>Jumlah Ralat</h4><h2>{total_r}</h2></div>
+            <div class="metric-card"><h4>Ralat Selesai</h4><h2 style="color:#2196F3;">0</h2></div>
+            <div class="metric-card"><h4>Belum Selesai</h4><h2 style="color:#FF5252;">{total_r}</h2></div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # Graf
-    if pilihan == "KESELURUHAN Sekolah":
-        df_g = df_display.groupby('KELAS')['TOTAL_RALAT'].sum().reset_index()
-        fig = px.bar(df_g, x='KELAS', y='TOTAL_RALAT', color='KELAS', color_discrete_sequence=px.colors.qualitative.Pastel)
-    else:
-        df_c = df_display[ralat_list].notna().sum().reset_index()
-        df_c.columns = ['Kategori', 'Jumlah']
-        fig = px.bar(df_c, x='Kategori', y='Jumlah', color='Kategori', color_discrete_sequence=px.colors.qualitative.Pastel)
+        # Graf & Jadual (Kod yang sama)
+        st.write("")
+        if pilihan == "KESELURUHAN Sekolah":
+            df_g = df_display.groupby('KELAS')['TOTAL_RALAT'].sum().reset_index()
+            fig = px.bar(df_g, x='KELAS', y='TOTAL_RALAT', color='KELAS', color_discrete_sequence=px.colors.qualitative.Pastel)
+        else:
+            df_c = df_display[ralat_list].notna().sum().reset_index()
+            df_c.columns = ['Kategori', 'Jumlah']
+            fig = px.bar(df_c, x='Kategori', y='Jumlah', color='Kategori', color_discrete_sequence=px.colors.qualitative.Pastel)
 
-    fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', showlegend=False)
-    st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
 
-    # Jadual
-    st.markdown("### 📋 Senarai Murid Perlu Tindakan")
-    df_ralat = df_display[df_display['TOTAL_RALAT'] > 0]
-    if not df_ralat.empty:
+        st.markdown("### 📋 Senarai Murid Perlu Tindakan")
+        df_ralat = df_display[df_display['TOTAL_RALAT'] > 0]
         st.dataframe(df_ralat[['KELAS', 'NAMA_MURID'] + ralat_list].fillna(''), use_container_width=True, hide_index=True)
-    else:
-        st.success(f"🎉 Tahniah! Kelas {pilihan} sudah tiada ralat.")
 
 except Exception as e:
-    st.info("Sedang memuatkan data... Sila Refresh jika mengambil masa terlalu lama.")
+    st.info("Sila Refresh semula portal anda.")
