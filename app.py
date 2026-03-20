@@ -10,7 +10,6 @@ st.set_page_config(page_title="idMe Analysis SKTB", layout="wide", page_icon="ðŸ
 logo_id = "1XV1CIEWhms8jHqJGOKpSluqr7cxtSWrv"
 logo_url = f"https://drive.google.com/thumbnail?id={logo_id}&sz=w500"
 
-# 3. TEMA CSS
 # 3. TEMA CSS (Dikemaskini untuk besarkan & bold tajuk kad)
 st.markdown("""
     <style>
