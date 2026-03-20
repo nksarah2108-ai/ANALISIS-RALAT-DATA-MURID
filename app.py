@@ -11,29 +11,43 @@ logo_id = "1XV1CIEWhms8jHqJGOKpSluqr7cxtSWrv"
 logo_url = f"https://drive.google.com/thumbnail?id={logo_id}&sz=w500"
 
 # 3. TEMA CSS
+# 3. TEMA CSS (Dikemaskini untuk besarkan & bold tajuk kad)
 st.markdown("""
     <style>
     .stApp { background-color: #fdf2f5; }
     [data-testid="stHorizontalBlock"] { align-items: center; }
+    
+    /* Cantikkan Kad Statistik */
     .card-container { display: flex; justify-content: space-around; gap: 10px; margin-bottom: 20px; }
     .metric-card {
         background-color: white; padding: 20px; border-radius: 15px;
         border: 2px solid #ffc1d6; text-align: center; flex: 1;
         box-shadow: 2px 2px 8px rgba(0,0,0,0.05);
     }
-    .metric-card h4 { color: #888; font-size: 14px; margin-bottom: 5px; }
-    .metric-card h2 { color: #ff4d88; margin: 0; font-size: 28px; }
+    
+    /* --- BAHAGIAN YANG DIUBAH: Tajuk Kad (h4) --- */
+    .metric-card h4 { 
+        color: #555; 
+        font-size: 18px;    /* Saiz asal 14px, sekarang 18px */
+        font-weight: bold;  /* Buat jadi Bold */
+        margin-bottom: 8px; 
+    }
+    
+    .metric-card h2 { color: #ff4d88; margin: 0; font-size: 32px; font-weight: bold; }
+    
+    /* Tajuk Portal */
     h1 { color: #ff4d88; text-align: center; font-family: 'Comic Sans MS', cursive; margin-top: -10px; padding-top: 0; }
-    h3 { color: #ff4d88; font-family: 'Comic Sans MS', cursive; }
+    
+    /* Butang Edit */
     .edit-button {
         background-color: #ff4d88; color: white !important; padding: 12px 25px;
         text-align: center; border-radius: 12px; text-decoration: none;
         display: inline-block; font-weight: bold; margin-bottom: 25px; border: 2px solid #ffb6c1;
     }
+    
     section[data-testid="stSidebar"] { background-color: #fff0f5; border-right: 2px solid #ffc1d6; }
     </style>
     """, unsafe_allow_html=True)
-
 # 4. URL DATA
 url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC4K9zTk5to3U37As72duwLP7GRqYMkauaAhjr6ANe8s6bl7Qz85ojUXeSDOYw3-iQkMvKV-gq4ZXf/pub?gid=272260181&single=true&output=csv"
 base_edit = "https://docs.google.com/spreadsheets/d/1y8BvpG0NN5wWwhSFWNS2AOI4Qe8O4HYg5M-LPrMmzjk/edit?"
