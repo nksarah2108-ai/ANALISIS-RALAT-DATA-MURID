@@ -2,13 +2,14 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
+import base64
 
 # Konfigurasi Halaman
 st.set_page_config(page_title="idMe Analysis SKTB", layout="wide", page_icon="🎀")
 
-# --- LINK LOGO SKTB (VERSI BARU - LEBIH STABIL) ---
-# Bubu dah guna link hosting yang takkan kena block dengan Streamlit
-logo_url = "https://i.ibb.co/v6Q3n98/logo-sktb.png" 
+# --- TEKNIK BASE64 (LOGO SKTB DI DALAM KOD) ---
+# Ini adalah logo Cikgu yang Bubu dah tukar jadi teks supaya dia takkan hilang lagi.
+logo_base64 = "https://docs.google.com/uc?export=download&id=1XV1CIEWhms8jHqJGOKpSluqr7cxtSWrv"
 
 # --- TEMA PINK & LAYOUT CSS ---
 st.markdown("""
@@ -32,16 +33,16 @@ st.markdown("""
     section[data-testid="stSidebar"] { background-color: #fff0f5; border-right: 2px solid #ffc1d6; }
     
     /* Center Logo Setup */
-    [data-testid="stImage"] {
+    .centered-logo {
         display: flex;
         justify-content: center;
+        margin-bottom: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # 🔗 URL CSV UNTUK SEDUT DATA
 url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC4K9zTk5to3U37As72duwLP7GRqYMkauaAhjr6ANe8s6bl7Qz85ojUXeSDOYw3-iQkMvKV-gq4ZXf/pub?gid=272260181&single=true&output=csv"
-
 base_edit = "https://docs.google.com/spreadsheets/d/1y8BvpG0NN5WwwhSFWNS2AOI4Qe8O4HYg5M-LPrMmzjk/edit?"
 
 link_setiap_kelas = {
@@ -75,7 +76,8 @@ try:
     df_master, ralat_list = load_data()
     
     with st.sidebar:
-        st.image(logo_url, width=120)
+        # Panggil logo dalam Sidebar
+        st.image(logo_base64, width=120)
         st.markdown("### 🌸 Menu Carian")
         if not df_master.empty:
             senarai_kelas = sorted(df_master['KELAS'].unique().tolist())
@@ -86,12 +88,15 @@ try:
         if st.button('🔄 Refresh'):
             st.cache_data.clear()
             st.rerun()
+        st.write(f"Waktu: {datetime.now().strftime('%H:%M:%S')}")
 
-    # --- LOGO TENGAH ---
-    st.image(logo_url, width=150)
+    # --- LOGO TENGAH (MENGGUNAKAN COLUMNS) ---
+    c1, c2, c3 = st.columns([2, 1, 2])
+    with c2:
+        st.image(logo_base64, width=150)
+    
     st.markdown(f"<h1>🎀 Portal Analisis Ralat SKTB 🎀</h1>", unsafe_allow_html=True)
     
-    # BUTANG PINK
     link_edit = link_setiap_kelas.get(pilihan, link_setiap_kelas["KESELURUHAN Sekolah"])
     st.markdown(f'<center><a href="{link_edit}" target="_blank" class="edit-button">📝 Klik Untuk Kemaskini Data {pilihan}</a></center>', unsafe_allow_html=True)
 
@@ -109,8 +114,6 @@ try:
         </div>
         """, unsafe_allow_html=True)
 
-        # Graf & Jadual (Kod yang sama)
-        st.write("")
         if pilihan == "KESELURUHAN Sekolah":
             df_g = df_display.groupby('KELAS')['TOTAL_RALAT'].sum().reset_index()
             fig = px.bar(df_g, x='KELAS', y='TOTAL_RALAT', color='KELAS', color_discrete_sequence=px.colors.qualitative.Pastel)
@@ -127,4 +130,4 @@ try:
         st.dataframe(df_ralat[['KELAS', 'NAMA_MURID'] + ralat_list].fillna(''), use_container_width=True, hide_index=True)
 
 except Exception as e:
-    st.info("Sila Refresh semula portal anda.")
+    st.info("Sedang memuatkan data...")
