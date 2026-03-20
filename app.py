@@ -36,7 +36,7 @@ st.markdown("""
 
 # 4. URL DATA
 url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSC4K9zTk5to3U37As72duwLP7GRqYMkauaAhjr6ANe8s6bl7Qz85ojUXeSDOYw3-iQkMvKV-gq4ZXf/pub?gid=272260181&single=true&output=csv"
-base_edit = "https://docs.google.com/spreadsheets/d/1y8BvpG0NN5WwwhSFWNS2AOI4Qe8O4HYg5M-LPrMmzjk/edit?"
+base_edit = "https://docs.google.com/spreadsheets/d/1y8BvpG0NN5wWwhSFWNS2AOI4Qe8O4HYg5M-LPrMmzjk/edit?"
 
 link_setiap_kelas = {
     "D1 IBNU SINA": f"{base_edit}gid=336938430#gid=336938430",
