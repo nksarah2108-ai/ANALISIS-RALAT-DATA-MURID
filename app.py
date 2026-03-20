@@ -51,7 +51,7 @@ try:
     
     with st.sidebar:
         # Gunakan format imej biasa tanpa CSS pelik di sidebar
-        st.image(logo_url, width=120)
+        st.image(logo_url, width=100)
         st.markdown("### 🌸 Menu Carian")
         senarai_kelas = sorted(df_master['KELAS'].unique().tolist())
         pilihan = st.selectbox("Pilih Kelas:", ["KESELURUHAN Sekolah"] + senarai_kelas)
@@ -61,7 +61,7 @@ try:
 
     # --- LOGO TENGAH ---
     # Gunakan 3 column, letak imej kat tengah (col2)
-    col1, col2, col3 = st.columns([1, 0.4, 1])
+    col1, col2, col3 = st.columns([1, 0.2, 1])
     with col2:
         st.image(logo_url, use_container_width=True)
 
